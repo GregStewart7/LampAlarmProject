@@ -1,49 +1,53 @@
-#ifndef REALTIMECLOCK_H
-#define REALTIMECLOCK_H
+#ifndef RTCMANAGER_H
+#define RTCMANAGER_H
 
 #include <Arduino.h>
-#include <RTClib.h>         // Adafruit's RTClib for DS3231
-#include "LCDManager.h"     // Our LCD management module
-
-// Define the different operating modes.
-enum ClockMode { CLOCK_MODE, MODE_SELECT, SET_CLOCK_MODE };
+#include <RTClib.h>
 
 class RealTimeClock {
   public:
-    // Constructor: takes the button pin for updating time and a reference to an LCDManager.
-    RealTimeClock(int buttonPin, LCDManager &lcdManager);
-    
-    // Initialize the DS3231, LCD, and set the initial time.
-    void begin();
-    
-    // Call in loop() to process mode changes and update the display.
-    void update();
-    
+    // Constructor.
+    RealTimeClock();
+
+    // Initialize the DS3231 RTC.
+    void Initialize();
+
+    // Set the desired date and time (stored locally until applied).
+    void SetDate(int year, int month, int day);
+    void SetTime(int hour, int minute);
+    // Write the stored date and time to the RTC.
+    void SetClock();
+
+    // Alarm functions:
+    // Program a daily alarm for the specified hour and minute.
+    void SetAlarm(int hour, int minute);
+    // Clear the alarm (disable alarm checking).
+    void ClearAlarm();
+    // Poll the RTC time; if the alarm is set and the current time matches, set the alarmTriggered flag.
+    void CheckAlarm();
+
+    // Get the current DateTime from the RTC.
+    DateTime GetDateTime();
+
+    // This volatile flag is set when the alarm condition is met.
+    volatile bool alarmTriggered;
+
   private:
-    int _buttonPin;          // Digital pin for the button.
-    RTC_DS3231 rtc;          // DS3231 RTC object from RTClib.
-    LCDManager &_lcdManager; // Reference to the LCDManager.
-    
-    // Debounce and button press duration variables.
-    int _lastButtonState;
-    int _buttonState;
-    unsigned long _lastDebounceTime;
-    const unsigned long _debounceDelay = 50;  // milliseconds.
-    unsigned long _buttonPressStartTime;
-    
-    // Variable to update the display once per second.
-    unsigned long _lastDisplayUpdate;
-    
-    // Variable to record when MODE_SELECT is entered.
-    unsigned long _modeSelectEnteredTime;
-    
-    // Current time values.
+    // Stored date/time values.
+    int _year;
+    int _month;
+    int _day;
     int _hour;
     int _minute;
     int _second;
-    
-    // Current operating mode.
-    ClockMode _mode;
+
+    // Alarm time variables.
+    int _alarmHour;
+    int _alarmMinute;
+    bool _alarmSet;
+
+    // DS3231 RTC object.
+    RTC_DS3231 _rtc;
 };
 
 #endif
